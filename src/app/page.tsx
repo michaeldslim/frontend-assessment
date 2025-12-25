@@ -16,7 +16,8 @@ import {
   TableHead,
   TableRow,
   Stack, 
-  Typography 
+  Typography,
+  Chip
 } from "@mui/material";
 import { IOp, IOperator } from "@/types";
 
@@ -58,11 +59,17 @@ export default function Home() {
 
   const renderOperatorRow = (op:IOp, operator:IOperator) => {
     return (
-      <TableRow key={`${op.opId}-${operator.id}`}>
+      <TableRow key={`${op.opId}-${operator.id}`} hover>
         <TableCell>{operator.firstName} {operator.lastName}</TableCell>
         <TableCell>{operator.opsCompleted}</TableCell>
         <TableCell>{Math.round(operator.reliability * 100)}%</TableCell>
-        <TableCell>{operator.endorsements.join(', ')}</TableCell>
+        <TableCell>
+          <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+            {operator.endorsements.map((endorsement, index) => (
+              <Chip key={index} label={endorsement} size="small" />
+            ))}
+          </Stack>
+        </TableCell>
       </TableRow>
     );
   };
