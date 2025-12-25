@@ -32,3 +32,9 @@ export interface IOperatorCheckStatus {
 export interface IOperatorCheckState {
   [operatorId: string]: IOperatorCheckStatus;
 }
+
+export interface IOpsResult {
+  ops: IOp[];
+  loading: boolean;
+  error: string | null;
+}

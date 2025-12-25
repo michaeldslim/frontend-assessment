@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import moment from "moment";
 import { 
   Alert,
@@ -21,10 +21,7 @@ import {
   Button
 } from "@mui/material";
 import { IOp, IOperator, IOperatorCheckState } from "@/types";
-
-const OPS_API_URL = 
-  process.env.NEXT_PUBLIC_OPS_API_URL ??
-  "https://frontend-challenge.veryableops.com/";
+import { useOps } from "@/utils/useOps";
 
 const CHECK_STATE_KEY = "operator-check-state";
 
@@ -52,33 +49,8 @@ function saveCheckState(checkState: IOperatorCheckState) {
 }
 
 export default function Home() {
-  const [ops, setOps] = useState<IOp[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const { ops, loading, error } = useOps();
   const [operatorCheckState, setOperatorCheckState] = useState<IOperatorCheckState>(() => loadCheckState());
-
-  useEffect(() => {
-    const fetchOps = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await fetch(OPS_API_URL);
-        if (!response.ok) {
-          throw new Error("Failed to fetch ops");
-        }
-
-        const data = await response.json() as IOp[];
-        setOps(data);
-      } catch (error) {
-        setError(error instanceof Error ? error.message : "An unknown error fetching ddata");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOps();
-  }, []);
 
   const formatDateTime = (dateTime: string) => {
     return moment(dateTime).format("MMM D, YYYY h:mm A");
