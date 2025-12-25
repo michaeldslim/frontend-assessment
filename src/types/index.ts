@@ -23,3 +23,12 @@ export interface IOp {
   checkOutExpirationTime: string;
   operators: IOperator[];
 }
+
+export interface IOperatorCheckStatus {
+  checkInTime?: string;
+  checkOutTime?: string;
+}
+
+export interface IOperatorCheckState {
+  [operatorId: string]: IOperatorCheckStatus;
+}

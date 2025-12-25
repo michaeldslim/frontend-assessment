@@ -17,18 +17,45 @@ import {
   TableRow,
   Stack, 
   Typography,
-  Chip
+  Chip,
+  Button
 } from "@mui/material";
-import { IOp, IOperator } from "@/types";
+import { IOp, IOperator, IOperatorCheckState } from "@/types";
 
 const OPS_API_URL = 
   process.env.NEXT_PUBLIC_OPS_API_URL ??
   "https://frontend-challenge.veryableops.com/";
 
+const CHECK_STATE_KEY = "operator-check-state";
+
+function loadCheckState(): IOperatorCheckState {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const state = window?.localStorage.getItem(CHECK_STATE_KEY);
+    if (!state) return {};
+
+    return JSON.parse(state) as IOperatorCheckState;
+  } catch{
+    return {};
+  }
+}
+
+function saveCheckState(checkState: IOperatorCheckState) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window?.localStorage.setItem(CHECK_STATE_KEY, JSON.stringify(checkState));
+  } catch{
+    // ignore
+  }
+}
+
 export default function Home() {
   const [ops, setOps] = useState<IOp[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [operatorCheckState, setOperatorCheckState] = useState<IOperatorCheckState>(() => loadCheckState());
 
   useEffect(() => {
     const fetchOps = async () => {
@@ -57,7 +84,39 @@ export default function Home() {
     return moment(dateTime).format("MMM D, YYYY h:mm A");
   };
 
+  type CheckField = 'checkInTime' | 'checkOutTime';
+  const updateOperatorCheckState = (operator: IOperator, field: CheckField) => {
+    const oKey = String(operator.id);
+    const now = moment().toISOString();
+
+    setOperatorCheckState((prev) => {
+      const updatedState: IOperatorCheckState = {
+        ...prev,
+        [oKey]: {
+          ...(prev[oKey] || {}),
+          [field]: now,
+        }
+      };
+      
+      saveCheckState(updatedState);
+      return updatedState;
+    });
+  };
+
+  const handleCheckIn = (operator: IOperator) => updateOperatorCheckState(operator, 'checkInTime');
+  const handleCheckOut = (operator: IOperator) => updateOperatorCheckState(operator, 'checkOutTime');
+
   const renderOperatorRow = (op:IOp, operator:IOperator) => {
+    const key = String(operator.id);
+    const checkInTime = operatorCheckState[key]?.checkInTime;
+    const checkOutTime = operatorCheckState[key]?.checkOutTime;
+
+    const isCheckedIn = Boolean(checkInTime);
+    const isCheckedOut = Boolean(checkOutTime);
+
+    const checkedInLabel = checkInTime ? formatDateTime(checkInTime) : "Not Checked In";
+    const checkedOutLabel = checkOutTime ? formatDateTime(checkOutTime) : "Not Checked Out";
+
     return (
       <TableRow key={`${op.opId}-${operator.id}`} hover>
         <TableCell>{operator.firstName} {operator.lastName}</TableCell>
@@ -68,6 +127,18 @@ export default function Home() {
             {operator.endorsements.map((endorsement, index) => (
               <Chip key={index} label={endorsement} size="small" />
             ))}
+          </Stack>
+        </TableCell>
+        <TableCell>
+          <Stack spacing={0.5}>
+            <Typography variant="body2">Check In: {checkedInLabel}</Typography>
+            <Typography variant="body2">Check Out: {checkedOutLabel}</Typography>
+          </Stack>
+        </TableCell>
+        <TableCell align="right">
+          <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+            <Button variant={isCheckedIn ? "contained" : "outlined"} color="primary" size="small" onClick={() => handleCheckIn(operator)} sx={{ textTransform: "none" }}>check in</Button>
+            <Button variant={isCheckedOut ? "contained" : "outlined"} color={isCheckedOut ? "error" : "primary"} size="small" onClick={() => handleCheckOut(operator)} sx={{ textTransform: "none" }}>check out</Button>
           </Stack>
         </TableCell>
       </TableRow>
@@ -133,6 +204,8 @@ export default function Home() {
                       <TableCell>Ops Completed</TableCell>
                       <TableCell>Reliability</TableCell>
                       <TableCell>Endorsements</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell align="right">Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
