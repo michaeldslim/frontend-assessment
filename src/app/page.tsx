@@ -18,12 +18,15 @@ import {
   Stack, 
   Typography,
   Chip,
-  Button
+  Button,
+  TableSortLabel
 } from "@mui/material";
 import { IOp, IOperator, IOperatorCheckState } from "@/types";
 import { useOps } from "@/utils/useOps";
 
 const CHECK_STATE_KEY = "operator-check-state";
+
+type SortBy = "operator" | "opsCompleted" | "reliability" | null;
 
 function loadCheckState(): IOperatorCheckState {
   if (typeof window === "undefined") return {};
@@ -51,9 +54,33 @@ function saveCheckState(checkState: IOperatorCheckState) {
 export default function Home() {
   const { ops, loading, error } = useOps();
   const [operatorCheckState, setOperatorCheckState] = useState<IOperatorCheckState>(() => loadCheckState());
+  const [sortBy, setSortBy] = useState<SortBy>("operator");
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const formatDateTime = (dateTime: string) => {
     return moment(dateTime).format("MMM D, YYYY h:mm A");
+  };
+
+  const handleSort = (columnName: Exclude<SortBy, null>) => {
+    if (sortBy === columnName) {
+      setSortOrder(prev => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(columnName);
+      setSortOrder("asc");
+    }
+  };
+
+  const sortOperators = (operators: IOperator[]):IOperator[] => {
+    if (!sortBy) return operators;
+
+    const sortedOperators = [...operators].sort((a, b) => {
+      if (sortBy === "operator") { return sortOrder === "asc" ? a.firstName.localeCompare(b.firstName) : b.firstName.localeCompare(a.firstName); }
+      if (sortBy === "opsCompleted") { return sortOrder === "asc" ? a.opsCompleted - b.opsCompleted : b.opsCompleted - a.opsCompleted; }
+      if (sortBy === "reliability") { return sortOrder === "asc" ? a.reliability - b.reliability : b.reliability - a.reliability; }
+      return 0;
+    })
+    
+    return sortedOperators;
   };
 
   type CheckField = 'checkInTime' | 'checkOutTime';
@@ -118,7 +145,7 @@ export default function Home() {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4}}>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       <Stack spacing={3}>
         <Box>
           <Typography variant="h4">Ops List</Typography>
@@ -172,16 +199,47 @@ export default function Home() {
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell>Operator</TableCell>
-                      <TableCell>Ops Completed</TableCell>
-                      <TableCell>Reliability</TableCell>
+                      <TableCell 
+                        sx={{ width: 220, maxWidth: 220 }}
+                        sortDirection={sortBy === "operator" ? sortOrder : false}
+                      >
+                        <TableSortLabel
+                          active={sortBy === "operator"}
+                          direction={sortBy === "operator" ? sortOrder : "asc"}
+                          onClick={() => handleSort("operator")}
+                        >
+                          Operator
+                        </TableSortLabel>                        
+                      </TableCell>
+                      <TableCell
+                        sortDirection={sortBy === "opsCompleted" ? sortOrder : false}
+                      >
+                        <TableSortLabel
+                          active={sortBy === "opsCompleted"}
+                          direction={sortBy === "opsCompleted" ? sortOrder : "asc"}
+                          onClick={() => handleSort("opsCompleted")}
+                        >
+                          Ops Completed
+                        </TableSortLabel>
+                      </TableCell>
+                      <TableCell
+                        sortDirection={sortBy === "reliability" ? sortOrder : false}
+                      >
+                        <TableSortLabel
+                          active={sortBy === "reliability"}
+                          direction={sortBy === "reliability" ? sortOrder : "asc"}
+                          onClick={() => handleSort("reliability")}
+                        >
+                          Reliability
+                        </TableSortLabel>
+                      </TableCell>
                       <TableCell>Endorsements</TableCell>
                       <TableCell>Status</TableCell>
                       <TableCell align="right">Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {op.operators.map((operator) => renderOperatorRow(op,operator))}
+                    {sortOperators(op.operators).map((operator) => renderOperatorRow(op,operator))}
                   </TableBody>
                 </Table>
               </Box>
