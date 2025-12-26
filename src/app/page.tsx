@@ -25,35 +25,12 @@ import { IOp, IOperator, IOperatorCheckState, IFilteredOp } from "@/types";
 import { useOps } from "@/utils/useOps";
 import { useDebounce } from "@/utils/useDebounce";
 import { filterOps } from "@/utils/filterOps";
-
-const CHECK_STATE_KEY = "operator-check-state";
+import { formatDateTime } from "@/utils/date";
+import { loadCheckState, saveCheckState } from "@/utils/checkState";
 
 const MIN_SEARCH_LENGTH = 2;
 
 type SortBy = "operator" | "opsCompleted" | "reliability" | null;
-
-function loadCheckState(): IOperatorCheckState {
-  if (typeof window === "undefined") return {};
-
-  try {
-    const state = window?.localStorage.getItem(CHECK_STATE_KEY);
-    if (!state) return {};
-
-    return JSON.parse(state) as IOperatorCheckState;
-  } catch{
-    return {};
-  }
-}
-
-function saveCheckState(checkState: IOperatorCheckState) {
-  if (typeof window === "undefined") return;
-
-  try {
-    window?.localStorage.setItem(CHECK_STATE_KEY, JSON.stringify(checkState));
-  } catch{
-    // ignore
-  }
-}
 
 export default function Home() {
   const { ops, loading, error } = useOps();
@@ -61,10 +38,6 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortBy, setSortBy] = useState<SortBy>("operator");
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-
-  const formatDateTime = (dateTime: string) => {
-    return moment(dateTime).format("MMM D, YYYY h:mm A");
-  };
 
   const handleSort = (columnName: Exclude<SortBy, null>) => {
     if (sortBy === columnName) {
