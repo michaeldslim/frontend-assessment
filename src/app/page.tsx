@@ -120,8 +120,8 @@ export default function Home() {
         </TableCell>
         <TableCell align="right">
           <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-            <Button variant={isCheckedIn ? "contained" : "outlined"} color="primary" size="small" onClick={() => handleCheckIn(operator)} sx={{ textTransform: "none" }}>check in</Button>
-            <Button variant={isCheckedOut ? "contained" : "outlined"} color={isCheckedOut ? "error" : "primary"} size="small" onClick={() => handleCheckOut(operator)} sx={{ textTransform: "none" }}>check out</Button>
+            <Button variant={isCheckedIn ? "contained" : "outlined"} color="primary" size="small" onClick={() => handleCheckIn(operator)} sx={{ textTransform: "none" }} aria-label={`Check in ${operator.firstName} ${operator.lastName} for ${op.opTitle}`}>check in</Button>
+            <Button variant={isCheckedOut ? "contained" : "outlined"} color={isCheckedOut ? "error" : "primary"} size="small" onClick={() => handleCheckOut(operator)} sx={{ textTransform: "none" }} aria-label={`Check out ${operator.firstName} ${operator.lastName} from ${op.opTitle}`}>check out</Button>
           </Stack>
         </TableCell>
       </TableRow>
@@ -129,123 +129,128 @@ export default function Home() {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Stack spacing={3}>
-        <Box>
-          <Typography variant="h4">Ops List</Typography>
-          <Typography variant="body1">Assigned operators and manage check in/out status.</Typography>
-        </Box>
+    <main aria-label="Ops List">
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Stack spacing={3}>
+          <Box>
+            <Typography variant="h1" component="h1">Ops List</Typography>
+            <Typography variant="body1">Assigned operators and manage check in/out status.</Typography>
+          </Box>
 
-        <Box>
-          <TextField
-            label="Search: Operator name, Op title, or Public ID"
-            placeholder="Operator name, Op title, or Public ID"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            size="small"
-            fullWidth
-          />
-        </Box>
+          <Box>
+            <TextField
+              label="Search: Operator name, Op title, or Public ID"
+              placeholder="Operator name, Op title, or Public ID"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              size="small"
+              fullWidth
+            />
+          </Box>
 
-        {loading && (
-          <Stack alignItems="center" justifyContent="center" spacing={2}>
-            <CircularProgress />
-            <Typography variant="body1">Loading ops data...</Typography>
-          </Stack>
-        )}
+          {loading && (
+            <Stack alignItems="center" justifyContent="center" spacing={2} role="status" aria-live="polite">
+              <CircularProgress />
+              <Typography variant="body1">Loading ops data...</Typography>
+            </Stack>
+          )}
 
-        {!loading && error && (
-          <Alert severity="error">{error}</Alert>
-        )}
+          {!loading && error && (
+            <Alert severity="error">{error}</Alert>
+          )}
 
-        {!loading && !error && ops.length === 0 && (
-          <Alert severity="info">No ops data available.</Alert>
-        )}
+          {!loading && !error && ops.length === 0 && (
+            <Alert severity="info">No ops data available.</Alert>
+          )}
 
-        {!loading && !error && ops.length > 0 && filteredOps.length === 0 && isSearchValid && (
-          <Alert severity="info">No results match your search.</Alert>
-        )}
+          {!loading && !error && ops.length > 0 && filteredOps.length === 0 && isSearchValid && (
+            <Alert severity="info">No results match your search.</Alert>
+          )}
 
-        {!loading && !error && filteredOps.map(({ op, searchableOperators }) => (
-          <Card key={op.opId} variant="outlined">
-            <CardContent>
-              <Stack spacing={2}>
-                <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={1}>
-                  <Box>
-                    <Typography variant="h6">{op.opTitle}</Typography>
-                    <Typography variant="body2" color="text.secondary">Public ID: {op.publicId}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="body2">Operators Needed: {op.operatorsNeeded}</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: "right"}}>Filled: {op.filledQuantity}</Typography>
-                  </Box>
+          {!loading && !error && filteredOps.map(({ op, searchableOperators }) => (
+            <Card key={op.opId} variant="outlined">
+              <CardContent>
+                <Stack spacing={2}>
+                  <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={1}>
+                    <Box>
+                      <Typography variant="h6">{op.opTitle}</Typography>
+                      <Typography variant="body2" color="text.secondary">Public ID: {op.publicId}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2">Operators Needed: {op.operatorsNeeded}</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ textAlign: "right"}}>Filled: {op.filledQuantity}</Typography>
+                    </Box>
+                  </Stack>
                 </Stack>
-              </Stack>
 
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                <Typography variant="body2" color="text.secondary">
-                  Start Time: {formatDateTime(op.startTime)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  End Time: {formatDateTime(op.endTime)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Total Est. Hours: {op.estTotalHours}
-                </Typography>
-              </Stack>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                  <Typography variant="body2" color="text.secondary">
+                    Start Time: {formatDateTime(op.startTime)}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    End Time: {formatDateTime(op.endTime)}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Total Est. Hours: {op.estTotalHours}
+                  </Typography>
+                </Stack>
 
-              <Box sx={{ overflow: "auto" }}>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell 
-                        sx={{ width: 220, maxWidth: 220 }}
-                        sortDirection={sortBy === "operator" ? sortOrder : false}
-                      >
-                        <TableSortLabel
-                          active={sortBy === "operator"}
-                          direction={sortBy === "operator" ? sortOrder : "asc"}
-                          onClick={() => handleSort("operator")}
+                <Box sx={{ overflow: "auto" }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell 
+                          sx={{ width: 220, maxWidth: 220 }}
+                          sortDirection={sortBy === "operator" ? sortOrder : false}
+                          scope="col"
                         >
-                          Operator
-                        </TableSortLabel>                        
-                      </TableCell>
-                      <TableCell
-                        sortDirection={sortBy === "opsCompleted" ? sortOrder : false}
-                      >
-                        <TableSortLabel
-                          active={sortBy === "opsCompleted"}
-                          direction={sortBy === "opsCompleted" ? sortOrder : "asc"}
-                          onClick={() => handleSort("opsCompleted")}
+                          <TableSortLabel
+                            active={sortBy === "operator"}
+                            direction={sortBy === "operator" ? sortOrder : "asc"}
+                            onClick={() => handleSort("operator")}
+                          >
+                            Operator
+                          </TableSortLabel>                        
+                        </TableCell>
+                        <TableCell
+                          sortDirection={sortBy === "opsCompleted" ? sortOrder : false}
+                          scope="col"
                         >
-                          Ops Completed
-                        </TableSortLabel>
-                      </TableCell>
-                      <TableCell
-                        sortDirection={sortBy === "reliability" ? sortOrder : false}
-                      >
-                        <TableSortLabel
-                          active={sortBy === "reliability"}
-                          direction={sortBy === "reliability" ? sortOrder : "asc"}
-                          onClick={() => handleSort("reliability")}
+                          <TableSortLabel
+                            active={sortBy === "opsCompleted"}
+                            direction={sortBy === "opsCompleted" ? sortOrder : "asc"}
+                            onClick={() => handleSort("opsCompleted")}
+                          >
+                            Ops Completed
+                          </TableSortLabel>
+                        </TableCell>
+                        <TableCell
+                          sortDirection={sortBy === "reliability" ? sortOrder : false}
+                          scope="col"
                         >
-                          Reliability
-                        </TableSortLabel>
-                      </TableCell>
-                      <TableCell>Endorsements</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell align="right">Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {searchableOperators.map((operator) => renderOperatorRow(op, operator))}
-                  </TableBody>
-                </Table>
-              </Box>
-            </CardContent>
-          </Card>
-        ))}
-      </Stack>
-    </Container>
+                          <TableSortLabel
+                            active={sortBy === "reliability"}
+                            direction={sortBy === "reliability" ? sortOrder : "asc"}
+                            onClick={() => handleSort("reliability")}
+                          >
+                            Reliability
+                          </TableSortLabel>
+                        </TableCell>
+                        <TableCell scope="col">Endorsements</TableCell>
+                        <TableCell scope="col">Status</TableCell>
+                        <TableCell scope="col" align="right">Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {searchableOperators.map((operator) => renderOperatorRow(op, operator))}
+                    </TableBody>
+                  </Table>
+                </Box>
+              </CardContent>
+            </Card>
+          ))}
+        </Stack>
+      </Container>
+    </main>
   );
 }
