@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import moment from "moment";
 import { 
   Alert,
@@ -9,7 +9,6 @@ import {
   CardContent,
   CircularProgress,
   Container,
-  Divider,
   Table,
   TableBody,
   TableCell,
@@ -19,12 +18,17 @@ import {
   Typography,
   Chip,
   Button,
-  TableSortLabel
+  TableSortLabel,
+  TextField,
 } from "@mui/material";
-import { IOp, IOperator, IOperatorCheckState } from "@/types";
+import { IOp, IOperator, IOperatorCheckState, IFilteredOp } from "@/types";
 import { useOps } from "@/utils/useOps";
+import { useDebounce } from "@/utils/useDebounce";
+import { filterOps } from "@/utils/filterOps";
 
 const CHECK_STATE_KEY = "operator-check-state";
+
+const MIN_SEARCH_LENGTH = 2;
 
 type SortBy = "operator" | "opsCompleted" | "reliability" | null;
 
@@ -54,6 +58,7 @@ function saveCheckState(checkState: IOperatorCheckState) {
 export default function Home() {
   const { ops, loading, error } = useOps();
   const [operatorCheckState, setOperatorCheckState] = useState<IOperatorCheckState>(() => loadCheckState());
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortBy, setSortBy] = useState<SortBy>("operator");
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
@@ -70,7 +75,7 @@ export default function Home() {
     }
   };
 
-  const sortOperators = (operators: IOperator[]):IOperator[] => {
+  const sortOperators = useCallback((operators: IOperator[]):IOperator[] => {
     if (!sortBy) return operators;
 
     const sortedOperators = [...operators].sort((a, b) => {
@@ -78,10 +83,10 @@ export default function Home() {
       if (sortBy === "opsCompleted") { return sortOrder === "asc" ? a.opsCompleted - b.opsCompleted : b.opsCompleted - a.opsCompleted; }
       if (sortBy === "reliability") { return sortOrder === "asc" ? a.reliability - b.reliability : b.reliability - a.reliability; }
       return 0;
-    })
+    });
     
     return sortedOperators;
-  };
+  }, [sortBy, sortOrder]);
 
   type CheckField = 'checkInTime' | 'checkOutTime';
   const updateOperatorCheckState = (operator: IOperator, field: CheckField) => {
@@ -105,6 +110,12 @@ export default function Home() {
   const handleCheckIn = (operator: IOperator) => updateOperatorCheckState(operator, 'checkInTime');
   const handleCheckOut = (operator: IOperator) => updateOperatorCheckState(operator, 'checkOutTime');
 
+  const startSearch = useDebounce(searchQuery.trim().toLowerCase(), 300);
+  const isSearchValid = startSearch.length >= MIN_SEARCH_LENGTH;
+  const filteredOps = useMemo<IFilteredOp[]>(() => {
+    return filterOps(ops, startSearch, isSearchValid, sortOperators);
+  }, [ops, startSearch, isSearchValid, sortOperators]);
+  
   const renderOperatorRow = (op:IOp, operator:IOperator) => {
     const key = String(operator.id);
     const checkInTime = operatorCheckState[key]?.checkInTime;
@@ -149,7 +160,18 @@ export default function Home() {
       <Stack spacing={3}>
         <Box>
           <Typography variant="h4">Ops List</Typography>
-          <Typography variant="body1">Assigned operators and mange check in/out status.</Typography>
+          <Typography variant="body1">Assigned operators and manage check in/out status.</Typography>
+        </Box>
+
+        <Box>
+          <TextField
+            label="Search: Operator name, Op title, or Public ID"
+            placeholder="Operator name, Op title, or Public ID"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            size="small"
+            fullWidth
+          />
         </Box>
 
         {loading && (
@@ -167,7 +189,11 @@ export default function Home() {
           <Alert severity="info">No ops data available.</Alert>
         )}
 
-        {!loading && !error && ops.map(op => (
+        {!loading && !error && ops.length > 0 && filteredOps.length === 0 && isSearchValid && (
+          <Alert severity="info">No results match your search.</Alert>
+        )}
+
+        {!loading && !error && filteredOps.map(({ op, searchableOperators }) => (
           <Card key={op.opId} variant="outlined">
             <CardContent>
               <Stack spacing={2}>
@@ -239,7 +265,7 @@ export default function Home() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {sortOperators(op.operators).map((operator) => renderOperatorRow(op,operator))}
+                    {searchableOperators.map((operator) => renderOperatorRow(op, operator))}
                   </TableBody>
                 </Table>
               </Box>

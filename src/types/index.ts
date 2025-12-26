@@ -38,3 +38,8 @@ export interface IOpsResult {
   loading: boolean;
   error: string | null;
 }
+
+export interface IFilteredOp {
+  op: IOp;
+  searchableOperators: IOperator[];
+};
