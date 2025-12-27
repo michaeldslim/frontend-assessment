@@ -31,6 +31,7 @@ import { loadCheckState, saveCheckState } from "@/utils/checkState";
 const MIN_SEARCH_LENGTH = 2;
 
 type SortBy = "operator" | "opsCompleted" | "reliability" | null;
+type CheckField = 'checkInTime' | 'checkOutTime';
 
 export default function Home() {
   const { ops, loading, error } = useOps();
@@ -61,7 +62,6 @@ export default function Home() {
     return sortedOperators;
   }, [sortBy, sortOrder]);
 
-  type CheckField = 'checkInTime' | 'checkOutTime';
   const updateOperatorCheckState = (operator: IOperator, field: CheckField) => {
     const oKey = String(operator.id);
     const now = moment().toISOString();
