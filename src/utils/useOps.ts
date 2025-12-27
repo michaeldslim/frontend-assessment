@@ -26,7 +26,7 @@ export function useOps(): IOpsResult {
         const data = await response.json() as IOp[];
         setOps(data);
       } catch (error) {
-        setError(error instanceof Error ? error.message : "An unknown error fetching ddata");
+        setError(error instanceof Error ? error.message : "An unknown error fetching data");
       } finally {
         setLoading(false);
       }
