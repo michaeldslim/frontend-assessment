@@ -42,4 +42,4 @@ export interface IOpsResult {
 export interface IFilteredOp {
   op: IOp;
   searchableOperators: IOperator[];
-};
+}
